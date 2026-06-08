@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300;1,9..40,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #FFFFFF;
+  --color-s1: #F9F9F7;
+  --color-s2: #F1F1ED;
+  --color-border-custom: #E4E4DC;
+  --color-border-mid: #CACAC0;
+  --color-text-primary: #151513;
+  --color-text-muted: #585850;
+  --color-text-dim: #8F8F85;
+  --color-accent: #151513;
+  --color-cream: #A03A1B;
+
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #FFFFFF;
+  color: #151513;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar styling for elite light visual */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFFFFF;
+}
+::-webkit-scrollbar-thumb {
+  background: #E4E4DC;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #CACAC0;
+}
+
+/* Custom marquee marquee track animation */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 35s linear infinite;
+}

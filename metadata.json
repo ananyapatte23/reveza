@@ -1,0 +1,8 @@
+{
+  "name": "Reveza",
+  "description": "An elite creative studio specializing in bespoke video production, 2D/3D explainers, motion graphics, and premium digital animations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
