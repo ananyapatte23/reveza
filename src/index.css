@@ -1,26 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
   --color-bg: #FFFFFF;
-  --color-s1: #F9F9F7;
-  --color-s2: #F1F1ED;
-  --color-border-custom: #E4E4DC;
-  --color-border-mid: #CACAC0;
-  --color-text-primary: #151513;
-  --color-text-muted: #585850;
-  --color-text-dim: #8F8F85;
-  --color-accent: #151513;
-  --color-cream: #A03A1B;
+  --color-s1: #FFFFFF;
+  --color-s2: #F4F7FC;
+  --color-border-custom: #E2E8F0;
+  --color-border-mid: #CBD5E1;
+  --color-text-primary: #0F172A;
+  --color-text-muted: #334155;
+  --color-text-dim: #64748B;
+  --color-accent: #1D4ED8; /* Premium Royal Blue */
+  --color-cream: #3B82F6;  /* Vibrant Royal Blue Accent */
 
-  --font-serif: "Instrument Serif", Georgia, serif;
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #FFFFFF;
-  color: #151513;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -33,14 +34,14 @@ body {
   background: #FFFFFF;
 }
 ::-webkit-scrollbar-thumb {
-  background: #E4E4DC;
+  background: #E2E8F0;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #CACAC0;
+  background: #CBD5E1;
 }
 
-/* Custom marquee marquee track animation */
+/* Custom marquee track animation */
 @keyframes marquee {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-50%); }
@@ -48,4 +49,45 @@ body {
 
 .animate-marquee {
   animation: marquee 35s linear infinite;
+}
+
+/* Advanced Animated Laser Pulse */
+@keyframes scan-line {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+.animate-scan {
+  animation: scan-line 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Elegant glowing blob movement */
+@keyframes blob-move {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.15); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+.animate-blob-slow-1 {
+  animation: blob-move 18s ease-in-out infinite;
+}
+.animate-blob-slow-2 {
+  animation: blob-move 24s ease-in-out infinite reverse;
+}
+
+/* Tech Shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-text {
+  background: linear-gradient(120deg, var(--color-text-primary) 30%, var(--color-accent) 50%, var(--color-text-primary) 70%);
+  background-size: 200% auto;
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: shimmer 4s linear infinite;
 }

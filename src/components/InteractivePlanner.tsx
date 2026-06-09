@@ -4,15 +4,16 @@
  */
 
 import { useState, FormEvent } from 'react';
-import { X, Sparkles, AlertCircle, IndianRupee, Clock, Server, ArrowRight } from 'lucide-react';
+import { X, Sparkles, AlertCircle, IndianRupee, Clock, Server, ArrowRight, ShieldCheck, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface InteractivePlannerProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  isInline?: boolean;
 }
 
-export default function InteractivePlanner({ isOpen, onClose }: InteractivePlannerProps) {
+export default function InteractivePlanner({ isOpen = false, onClose, isInline = false }: InteractivePlannerProps) {
   // Enterprise planner states
   const [erpScope, setErpScope] = useState<'none' | 's4hana' | 'multicountry' | 'greenfield'>('s4hana');
   const [aiScope, setAiScope] = useState<'none' | 'agentic' | 'decisioning' | 'engagement'>('agentic');
@@ -23,54 +24,72 @@ export default function InteractivePlanner({ isOpen, onClose }: InteractivePlann
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isInline && !isOpen) return null;
 
-  // Calculators (Estimates in INR)
-  const getBudgetEstimation = () => {
-    let cost = 0;
+  // Cost breakups to calculate proportional allocations
+  const getBudgetDetails = () => {
+    let erpCost = 0;
+    let aiCost = 0;
+    let supportCost = 0;
 
     // ERP Core parameters
     switch (erpScope) {
       case 's4hana':
-        cost += 8500000; // 85 Lakhs
+        erpCost = 8500000;
         break;
       case 'multicountry':
-        cost += 15000000; // 1.5 Crores
+        erpCost = 15000000;
         break;
       case 'greenfield':
-        cost += 12000000; // 1.2 Crores
+        erpCost = 12000000;
         break;
       default:
-        cost += 0;
+        erpCost = 0;
     }
 
     // AI Intelligence parameters
     switch (aiScope) {
       case 'agentic':
-        cost += 3500000; // 35 Lakhs
+        aiCost = 3500000;
         break;
       case 'decisioning':
-        cost += 4500000; // 45 Lakhs
+        aiCost = 4500000;
         break;
       case 'engagement':
-        cost += 2500000; // 25 Lakhs
+        aiCost = 2500000;
         break;
       default:
-        cost += 0;
+        aiCost = 0;
     }
 
     // Managed support
     if (managedServices) {
-      cost += 3000000; // 30 Lakhs / annum baseline
+      supportCost = 3000000;
     }
 
-    // Timeline speed markup
-    if (speed === 'rush') {
-      cost *= 1.25; // 25% markup for expedited deployment squads
-    }
+    let rawTotal = erpCost + aiCost + supportCost;
+    if (rawTotal === 0) rawTotal = 1;
 
-    return Math.round(cost);
+    // Expedite markup multiplier
+    const multiplier = speed === 'rush' ? 1.25 : 1;
+    const finalTotal = Math.round(rawTotal * multiplier);
+
+    const erpPercentage = Math.round((erpCost / rawTotal) * 100);
+    const aiPercentage = Math.round((aiCost / rawTotal) * 100);
+    const supportPercentage = Math.round((supportCost / rawTotal) * 100);
+
+    return {
+      erpCost: Math.round(erpCost * multiplier),
+      aiCost: Math.round(aiCost * multiplier),
+      supportCost: Math.round(supportCost * multiplier),
+      total: finalTotal,
+      erpPer: erpPercentage,
+      aiPer: aiPercentage,
+      supportPer: supportPercentage
+    };
   };
+
+  const { erpCost, aiCost, supportCost, total, erpPer, aiPer, supportPer } = getBudgetDetails();
 
   const getErpLabel = () => {
     switch (erpScope) {
@@ -102,40 +121,49 @@ export default function InteractivePlanner({ isOpen, onClose }: InteractivePlann
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className={isInline ? "relative w-full" : "fixed inset-0 z-50 flex items-center justify-center p-4"}>
       {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-[#151513]/50 backdrop-blur-sm"
-      />
+      {!isInline && (
+        <motion.div 
+          onClick={onClose} 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="absolute inset-0 z-10 cursor-pointer bg-slate-900/30 backdrop-blur-md" 
+        />
+      )}
 
       {/* Main Panel */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.98, y: 15 }}
+        initial={isInline ? { opacity: 1 } : { opacity: 0, scale: 0.96, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.98, y: 15 }}
-        className="relative w-full max-w-4xl bg-s1 border border-border-custom rounded-[4px] overflow-hidden shadow-2xl z-20 flex flex-col max-h-[92vh]"
+        exit={isInline ? undefined : { opacity: 0, scale: 0.96, y: 20 }}
+        transition={{ type: "spring", stiffness: 300, damping: 26 }}
+        className={isInline 
+          ? "relative w-full bg-s1 border border-border-custom rounded-lg overflow-hidden flex flex-col shadow-lg"
+          : "relative w-full max-w-5xl bg-s1 border border-border-custom rounded-lg overflow-hidden shadow-2xl z-20 flex flex-col max-h-[92vh]"
+        }
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-border-custom bg-s1">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-accent" />
-            <h3 className="font-serif text-lg font-normal text-text-primary">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border-custom bg-bg">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 text-accent animate-pulse" />
+            <h3 className="font-serif text-lg sm:text-xl font-normal tracking-tight text-text-primary">
               Enterprise RFP &amp; Solution Scopes Planner
             </h3>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-[3px] text-text-muted hover:text-text-primary hover:bg-s2 transition-all cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {!isInline && onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-s2 transition-all cursor-pointer border border-border-custom bg-bg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
-        <div className="overflow-y-auto p-6 md:p-8 flex-1 bg-bg text-text-primary">
+        <div className={`p-6 sm:p-8 flex-1 bg-bg text-text-primary ${isInline ? "overflow-visible" : "overflow-y-auto"}`}>
           <AnimatePresence mode="wait">
             {!submitted ? (
               <motion.div
@@ -149,256 +177,283 @@ export default function InteractivePlanner({ isOpen, onClose }: InteractivePlann
                 <div className="lg:col-span-7 space-y-6">
                   
                   {/* ERP Selection */}
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[#444440] mb-3 font-mono">
-                      1. ERP &amp; Core Platform Scope
+                  <div className="space-y-3">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-text-muted font-mono flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent" /> 1. ERP &amp; Core Platform Scope
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setErpScope('s4hana')}
-                        className={`p-3.5 text-left rounded-[3px] border text-xs font-semibold transition-all cursor-pointer ${
-                          erpScope === 's4hana'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
-                        }`}
-                      >
-                        S/4HANA Modernization
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setErpScope('multicountry')}
-                        className={`p-3.5 text-left rounded-[3px] border text-xs font-semibold transition-all cursor-pointer ${
-                          erpScope === 'multicountry'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
-                        }`}
-                      >
-                        Multi-Country Rollout
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setErpScope('greenfield')}
-                        className={`p-3.5 text-left rounded-[3px] border text-xs font-semibold transition-all cursor-pointer ${
-                          erpScope === 'greenfield'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
-                        }`}
-                      >
-                        Greenfield SAP Core
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setErpScope('none')}
-                        className={`p-3.5 text-left rounded-[3px] border text-xs font-semibold transition-all cursor-pointer ${
-                          erpScope === 'none'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
-                        }`}
-                      >
-                        No Core Change
-                      </button>
+                      {[
+                        { key: 's4hana', title: 'S/4HANA Modernize', desc: 'Transform legacy ERP' },
+                        { key: 'multicountry', title: 'Multi-Country Rollout', desc: '17+ nation compliance' },
+                        { key: 'greenfield', title: 'Greenfield SAP Core', desc: 'Clean state build-out' },
+                        { key: 'none', title: 'No Core Change', desc: 'Deploy on current ERP' }
+                      ].map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setErpScope(item.key as any)}
+                          className={`p-3.5 text-left rounded-lg border text-xs transition-all cursor-pointer flex flex-col gap-1 relative overflow-hidden group ${
+                            erpScope === item.key
+                              ? 'bg-accent/5 border-accent text-accent'
+                              : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid hover:bg-s2/20'
+                          }`}
+                        >
+                          <span className="font-semibold">{item.title}</span>
+                          <span className="text-[10px] opacity-85 font-light">{item.desc}</span>
+                          {erpScope === item.key && (
+                            <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-accent" />
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
                   {/* AI & Intelligence Selection */}
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[#444440] mb-3 font-mono">
-                      2. Applied AI &amp; Intelligence Layer
+                  <div className="space-y-3">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-text-muted font-mono flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cream" /> 2. Applied AI &amp; Intelligence Layer
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setAiScope('agentic')}
-                        className={`p-3.5 text-left rounded-[3px] border text-xs font-semibold transition-all cursor-pointer ${
-                          aiScope === 'agentic'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
-                        }`}
-                      >
-                        Agentic Workflows
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAiScope('decisioning')}
-                        className={`p-3.5 text-left rounded-[3px] border text-xs font-semibold transition-all cursor-pointer ${
-                          aiScope === 'decisioning'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
-                        }`}
-                      >
-                        Decision Intelligence
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAiScope('engagement')}
-                        className={`p-3.5 text-left rounded-[3px] border text-xs font-semibold transition-all cursor-pointer ${
-                          aiScope === 'engagement'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
-                        }`}
-                      >
-                        AI Engagement Engine
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAiScope('none')}
-                        className={`p-3.5 text-left rounded-[3px] border text-xs font-semibold transition-all cursor-pointer ${
-                          aiScope === 'none'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
-                        }`}
-                      >
-                        No AI Layer
-                      </button>
+                      {[
+                        { key: 'agentic', title: 'Agentic Workflows', desc: 'Reasoning process solvers' },
+                        { key: 'decisioning', title: 'Decision Intelligence', desc: 'Demand & stock optimization' },
+                        { key: 'engagement', title: 'AI Engagement Engine', desc: 'Natural voice & web channels' },
+                        { key: 'none', title: 'No AI Layer', desc: 'Pure ERP core focus' }
+                      ].map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setAiScope(item.key as any)}
+                          className={`p-3.5 text-left rounded-lg border text-xs transition-all cursor-pointer flex flex-col gap-1 relative overflow-hidden group ${
+                            aiScope === item.key
+                              ? 'bg-cream/5 border-cream text-cream'
+                              : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid hover:bg-s2/20'
+                          }`}
+                        >
+                          <span className="font-semibold">{item.title}</span>
+                          <span className="text-[10px] opacity-85 font-light">{item.desc}</span>
+                          {aiScope === item.key && (
+                            <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-cream" />
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
                   {/* Support AMS selection */}
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[#444440] mb-2.5 font-mono">
-                      3. Dedicated Managed services (24/7 SRE + continuous improvement)
+                  <div className="space-y-3">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-text-muted font-mono flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent" /> 3. Support SLA Protocol
                     </label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => setManagedServices(true)}
-                        className={`p-3.5 text-left rounded-[3px] border flex items-center gap-3 transition-all cursor-pointer ${
+                        className={`p-4 text-left rounded-lg border flex items-center gap-3 transition-all cursor-pointer relative overflow-hidden ${
                           managedServices
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
+                            ? 'bg-accent/8 border-accent text-accent'
+                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid hover:bg-s2/20'
                         }`}
                       >
-                        <Server className="w-4 h-4 shrink-0" />
+                        <Server className="w-5 h-5 shrink-0" />
                         <div>
-                          <div className="text-xs font-bold">Continuous Support</div>
-                          <div className="text-[9px] opacity-80 font-sans">Annual Service SLAs linked to KPIs</div>
+                          <div className="text-xs font-bold">24/7 SRE Support</div>
+                          <div className="text-[9px] opacity-85 font-sans leading-tight mt-0.5">SLA-guaranteed custom support cycles</div>
                         </div>
+                        {managedServices && (
+                          <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-accent" />
+                        )}
                       </button>
                       <button
                         type="button"
                         onClick={() => setManagedServices(false)}
-                        className={`p-3.5 text-left rounded-[3px] border flex items-center gap-3 transition-all cursor-pointer ${
+                        className={`p-4 text-left rounded-lg border flex items-center gap-3 transition-all cursor-pointer relative overflow-hidden ${
                           !managedServices
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
+                            ? 'bg-accent/5 border-border-mid text-text-muted'
+                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid hover:bg-s2/20'
                         }`}
                       >
-                        <X className="w-4 h-4 shrink-0" />
+                        <X className="w-5 h-5 shrink-0" />
                         <div>
-                          <div className="text-xs font-bold">Post-go-live transfer</div>
-                          <div className="text-[9px] opacity-80 font-sans">Self-operated internal handover</div>
+                          <div className="text-xs font-bold">Internal Handover</div>
+                          <div className="text-[9px] opacity-85 font-sans leading-tight mt-0.5">Operate in-house post-delivery</div>
                         </div>
+                        {!managedServices && (
+                          <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-text-dim" />
+                        )}
                       </button>
                     </div>
                   </div>
 
                   {/* Turnaround speed factor */}
-                  <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-[#444440] mb-2.5 font-mono">
-                      4. Engagement Pace &amp; Timeline
+                  <div className="space-y-3">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-text-muted font-mono flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent" /> 4. Engagement Velocity
                     </label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => setSpeed('standard')}
-                        className={`p-3.5 text-left rounded-[3px] border flex items-center gap-3 transition-all cursor-pointer ${
+                        className={`p-4 text-left rounded-lg border flex items-center gap-3 transition-all cursor-pointer relative overflow-hidden ${
                           speed === 'standard'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
+                            ? 'bg-accent/5 border-accent text-accent'
+                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid hover:bg-s2/20'
                         }`}
                       >
-                        <Clock className="w-4 h-4 shrink-0" />
+                        <Clock className="w-5 h-5 shrink-0" />
                         <div>
-                          <div className="text-xs font-bold">Standard Strategic Core</div>
-                          <div className="text-[9px] opacity-80 font-sans">Thorough blueprinting [12 Weeks]</div>
+                          <div className="text-xs font-bold">Standard Roadmap [12 Wks]</div>
+                          <div className="text-[9px] opacity-85 font-sans mt-0.5">Continuous deep-dive alignment</div>
                         </div>
+                        {speed === 'standard' && (
+                          <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-accent" />
+                        )}
                       </button>
                       <button
                         type="button"
                         onClick={() => setSpeed('rush')}
-                        className={`p-3.5 text-left rounded-[3px] border flex items-center gap-3 transition-all cursor-pointer ${
+                        className={`p-4 text-left rounded-lg border flex items-center gap-3 transition-all cursor-pointer relative overflow-hidden ${
                           speed === 'rush'
-                            ? 'bg-accent border-accent text-bg'
-                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid'
+                            ? 'bg-cream/5 border-cream text-cream'
+                            : 'bg-s1 border-border-custom text-text-muted hover:border-border-mid hover:bg-s2/20'
                         }`}
                       >
-                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <AlertCircle className="w-5 h-5 shrink-0 animate-bounce" />
                         <div>
-                          <div className="text-xs font-bold">Expedited Sprint</div>
-                          <div className="text-[9px] opacity-80 font-sans">Co-located rapid rollout [6 Weeks]</div>
+                          <div className="text-xs font-bold">Expedited Sprint [6 Wks]</div>
+                          <div className="text-[9px] opacity-85 font-sans mt-0.5">Expedited deployment (25% rush)</div>
                         </div>
+                        {speed === 'rush' && (
+                          <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-cream" />
+                        )}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Estimate Right Panel */}
-                <div className="lg:col-span-5 bg-s1 border border-border-custom rounded-[4px] p-6 lg:p-7 flex flex-col justify-between shadow-lg">
-                  <div>
-                    <h4 className="text-[10px] font-bold text-text-dim font-mono uppercase tracking-widest mb-4 border-b border-border-custom pb-2">
-                      RFP Scoping Breakdown
+                {/* Highly Visual Estimate Right Panel with Tri-Color Graph */}
+                <div className="lg:col-span-5 bg-s1 border border-border-custom rounded-lg p-6 lg:p-7 flex flex-col justify-between shadow-xl relative">
+                  
+                  {/* Decorative faint background element */}
+                  <div className="absolute bottom-4 right-4 pointer-events-none opacity-[0.03]">
+                    <Sparkles className="w-32 h-32 text-accent" />
+                  </div>
+
+                  <div className="space-y-6">
+                    <h4 className="text-[10px] font-bold text-text-dim font-mono uppercase tracking-widest border-b border-border-custom pb-2 flex items-center justify-between">
+                      <span>Provisional Estimate</span>
+                      <span className="text-[9px] px-2 py-0.5 bg-s2 rounded text-text-muted font-normal">AUDITED RATING</span>
                     </h4>
 
-                    <div className="space-y-4 text-xs font-light">
-                      <div className="flex justify-between border-b border-border-custom pb-2 gap-4">
-                        <span className="text-text-muted">SAP Core:</span>
-                        <span className="text-text-primary text-right font-normal">{getErpLabel()}</span>
+                    {/* Live Tri-Color Allocation Segment Stack (Richer Visuals constraint) */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[10px] font-mono text-text-dim">
+                        <span>ESTIMATED INVESTMENT SPLIT</span>
+                        <span>CORE VS AI VS SUPPORT</span>
                       </div>
-                      <div className="flex justify-between border-b border-border-custom pb-2 gap-4">
-                        <span className="text-text-muted">AI Layer:</span>
-                        <span className="text-text-primary text-right font-normal">{getAiLabel()}</span>
+                      
+                      {/* Bar stack display */}
+                      <div className="w-full h-4 bg-s2 rounded overflow-hidden flex shadow-inner">
+                        {erpPer > 0 && (
+                          <div 
+                            style={{ width: `${erpPer}%` }} 
+                            className="bg-accent transition-all duration-350" 
+                            title={`Digital Core: ${erpPer}%`}
+                          />
+                        )}
+                        {aiPer > 0 && (
+                          <div 
+                            style={{ width: `${aiPer}%` }} 
+                            className="bg-cream transition-all duration-350" 
+                            title={`Applied AI: ${aiPer}%`}
+                          />
+                        )}
+                        {supportPer > 0 && (
+                          <div 
+                            style={{ width: `${supportPer}%` }} 
+                            className="bg-cream transition-all duration-350" 
+                            title={`AMS Support: ${supportPer}%`}
+                          />
+                        )}
                       </div>
-                      <div className="flex justify-between border-b border-border-custom pb-2">
-                        <span className="text-text-muted">AMS Managed Support:</span>
-                        <span className="text-text-primary font-normal">{managedServices ? 'KPI-linked support (30L)' : 'None'}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-border-custom pb-2">
-                        <span className="text-text-muted">Timeline:</span>
-                        <span className="text-text-primary font-normal">{speed === 'rush' ? 'Expedited (Sprint)' : 'Standard (Strategic)'}</span>
+
+                      {/* Legend displaying actual percent and approximate color */}
+                      <div className="grid grid-cols-3 gap-1 text-[9px] font-mono pt-1 text-center">
+                        <div className="flex items-center gap-1 justify-center">
+                          <span className="w-2 h-2 rounded-full bg-accent" />
+                          <span className="text-text-muted font-semibold">Core: {erpPer}%</span>
+                        </div>
+                        <div className="flex items-center gap-1 justify-center">
+                          <span className="w-2 h-2 rounded-full bg-cream" />
+                          <span className="text-text-muted font-semibold">AI: {aiPer}%</span>
+                        </div>
+                        <div className="flex items-center gap-1 justify-center">
+                          <span className="w-2 h-2 rounded-full bg-cream" />
+                          <span className="text-text-muted font-semibold">SLA: {supportPer}%</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-8 pt-6 border-t border-dashed border-border-custom text-center">
-                      <div className="text-[10px] text-text-dim font-bold uppercase tracking-wider mb-2 font-mono">
-                        PROPORTIONAL INVESTMENT ESTIMATE (INR)
+                    <div className="space-y-3.5 text-xs font-light">
+                      <div className="flex justify-between border-b border-border-custom/60 pb-2.5 gap-4">
+                        <span className="text-text-dim font-mono text-[10px]">ERP Core Support:</span>
+                        <span className="text-text-primary text-right font-normal text-[11px] font-sans">{getErpLabel()}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-border-custom/60 pb-2.5 gap-4">
+                        <span className="text-text-dim font-mono text-[10px]">AI Layer Target:</span>
+                        <span className="text-text-primary text-right font-normal text-[11px] font-sans">{getAiLabel()}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-border-custom/60 pb-2.5">
+                        <span className="text-text-dim font-mono text-[10px]">Managed Support:</span>
+                        <span className="text-text-primary font-normal text-[11px]">{managedServices ? 'KPI-linked AMS protocol' : 'Handover to Internal Staff'}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-border-custom/60 pb-2.5">
+                        <span className="text-text-dim font-mono text-[10px]">Delivery Velocity:</span>
+                        <span className="text-text-primary font-normal text-[11px]">{speed === 'rush' ? 'Expedited 6-Wk Sprint' : 'Standard 12-Wk Strategic'}</span>
+                      </div>
+                    </div>
+
+                    {/* Beautiful Big Number estimate display */}
+                    <div className="bg-bg border border-border-custom p-5 rounded-lg text-center shadow-sm">
+                      <div className="text-[10px] text-text-dim font-bold uppercase tracking-widest mb-1.5 font-mono">
+                        PROVISIONAL ANUUALIZED AUDITED SUM (INR)
                       </div>
                       <div className="flex items-center justify-center text-accent">
                         <IndianRupee className="w-6 h-6 mr-1" />
-                        <span className="text-4xl font-extrabold tracking-tighter font-mono">
-                          {getBudgetEstimation().toLocaleString('en-IN')}
+                        <span className="text-4xl sm:text-5xl font-extrabold tracking-tighter font-mono text-accent">
+                          {total.toLocaleString('en-IN')}
                         </span>
                       </div>
-                      <p className="text-[9px] text-[#444440] mt-3 leading-relaxed">
-                        Provisional estimate includes full solution architecture blueprint, SRE parameters, change management metrics, and localized MCA legal guarantees.
+                      <p className="text-[9px] text-[#5C6462] mt-3.5 leading-relaxed font-sans max-w-sm mx-auto">
+                        This is an aggregated calculation including localized MCA guarantees, data architecture security bounds, and continuous core assurance.
                       </p>
                     </div>
                   </div>
 
                   {/* Submission form block */}
-                  <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+                  <form onSubmit={handleSubmit} className="mt-8 space-y-3.5 relative z-10">
                     <input
                       type="email"
                       required
-                      placeholder="Your Corporate Email Address"
+                      placeholder="Corporate Email Address"
                       value={userEmail}
                       onChange={(e) => setUserEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-[3px] bg-bg border border-border-custom text-xs text-text-primary placeholder-text-dim focus:outline-none focus:border-border-mid"
+                      className="w-full px-4 py-3.5 rounded-lg bg-bg border border-border-custom text-xs text-text-primary placeholder-text-dim focus:outline-none focus:border-accent font-sans transition-colors"
                     />
                     <textarea
-                      placeholder="Brief description of legacy stack or AI targets (optional)"
+                      placeholder="Brief details of current tech estate (optional)"
                       value={userBrief}
                       onChange={(e) => setUserBrief(e.target.value)}
                       rows={2}
-                      className="w-full px-4 py-3 rounded-[3px] bg-bg border border-border-custom text-xs text-text-primary placeholder-text-dim focus:outline-none focus:border-border-mid resize-none"
+                      className="w-full px-4 py-3.5 rounded-lg bg-bg border border-border-custom text-xs text-text-primary placeholder-text-dim focus:outline-none focus:border-accent font-sans resize-none transition-colors"
                     />
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full py-3.5 bg-accent text-bg hover:opacity-90 font-semibold text-xs tracking-wider rounded-[3px] flex items-center justify-center gap-1.5 cursor-pointer shadow-lg"
+                      className="w-full py-4 bg-accent text-bg hover:opacity-95 font-bold text-xs uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 cursor-pointer shadow-md hover:shadow-lg transition-all"
                     >
-                      {submitting ? 'Calculating RFP...' : 'Request Formal Transformation Proposal'}
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      {submitting ? 'Authenticating scope...' : 'Submit Scoping Proposal Draft'}
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   </form>
                 </div>
@@ -408,23 +463,29 @@ export default function InteractivePlanner({ isOpen, onClose }: InteractivePlann
                 key="success"
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="py-12 text-center max-w-md mx-auto flex flex-col items-center gap-4"
+                className="py-16 text-center max-w-lg mx-auto flex flex-col items-center gap-5"
               >
-                <div className="w-14 h-14 rounded-full bg-s1 border border-border-mid flex items-center justify-center mb-4">
-                  <Sparkles className="w-6 h-6 text-accent" />
+                <div className="w-16 h-16 rounded-full bg-s1 border-2 border-accent flex items-center justify-center mb-4 shadow-sm animate-pulse">
+                  <CheckCircle className="w-8 h-8 text-accent" />
                 </div>
-                <h3 className="font-serif text-2xl font-normal text-text-primary italic">Scoping Brief Logged</h3>
-                <p className="font-sans text-xs text-text-muted leading-relaxed font-light mb-6">
-                  Our Managing Director will review your S/4HANA &amp; Agentic AI parameters for an aggregate estimated budget of <strong className="text-accent font-semibold">₹{getBudgetEstimation().toLocaleString('en-IN')}</strong> and submit a detailed formal proposal draft to <strong className="text-text-primary">{userEmail}</strong> within 12 hours.
+                <h3 className="font-serif text-3xl font-normal text-text-primary italic">Scoping Parameters Locked</h3>
+                <p className="font-sans text-xs sm:text-sm text-text-muted leading-relaxed font-light mb-6">
+                  Thank you! Our chief delivery manager will process your S/4HANA &amp; Agentic AI parameters for an aggregate estimated budget of <strong className="text-accent font-bold">₹{total.toLocaleString('en-IN')}</strong> and submit a detailed formal proposal draft to <strong className="text-text-primary font-semibold">{userEmail}</strong> within 12 hours.
                 </p>
+                <div className="p-4 bg-s1 rounded border border-border-custom text-left text-[11px] font-mono space-y-1 w-full mb-4">
+                  <div className="text-accent font-bold uppercase tracking-wider mb-1">PROVISIONAL RECORD LOG:</div>
+                  <div>EMAIL: {userEmail}</div>
+                  <div>CALCULATION RANGE: INDIVIDUAL COMPLIANCE</div>
+                  <div>SLA LEVEL: CONTINUOUS ASSURANCES</div>
+                </div>
                 <button
                   onClick={() => {
                     setSubmitted(false);
-                    onClose();
+                    if (onClose) onClose();
                   }}
-                  className="px-6 py-3 rounded-[3px] bg-accent text-bg font-semibold text-xs tracking-wider cursor-pointer"
+                  className="px-8 py-3.5 rounded-lg bg-accent text-bg font-bold text-xs uppercase tracking-widest cursor-pointer shadow hover:opacity-95 transition-opacity"
                 >
-                  Return to Site
+                  {isInline ? 'Scoping configuration' : 'Close planner'}
                 </button>
               </motion.div>
             )}
