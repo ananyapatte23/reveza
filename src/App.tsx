@@ -13,16 +13,26 @@ import ServicesDetail from './components/ServicesDetail'; // Deals with Services
 import BeliefsAndIndustries from './components/BeliefsAndIndustries'; // Deals with Beliefs & Sectors
 import InteractivePlanner from './components/InteractivePlanner'; // Deals with RFP estimations
 import Footer from './components/Footer';
+import SignInPortal from './components/ui/travel-connect-signin-1';
 import { AnimatePresence, motion } from 'motion/react';
 import { TICKER_ITEMS } from './data';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, X } from 'lucide-react';
 
 type PageType = 'home' | 'capabilities' | 'cases' | 'services' | 'industries' | 'contact';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('home');
   const [plannerOpen, setPlannerOpen] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
   const [hoveredStackRow, setHoveredStackRow] = useState<number | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('reveza_authenticated') === 'true';
+  });
+
+  const handleSignOut = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('reveza_authenticated');
+  };
 
   // Synchronize hash routing
   useEffect(() => {
@@ -31,7 +41,16 @@ export default function App() {
       
       if (hash === 'thesis' || hash === 'top' || !hash) {
         setCurrentPage('home');
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        if (hash === 'thesis') {
+          setTimeout(() => {
+            const el = document.getElementById('thesis-block');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 100);
+        } else {
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }
       } else if (hash === 'capabilities') {
         setCurrentPage('capabilities');
         window.scrollTo({ top: 0, behavior: 'instant' });
@@ -54,6 +73,26 @@ export default function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
+
+  // If not authenticated, lock the screen with the modern Gate/SignIn Portal entry page
+  if (!isAuthenticated) {
+    return (
+      <SignInPortal 
+        onSuccess={() => {
+          setIsAuthenticated(true);
+          localStorage.setItem('reveza_authenticated', 'true');
+          setCurrentPage('home');
+          window.location.hash = '#thesis';
+          setTimeout(() => {
+            const el = document.getElementById('thesis-block');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 400);
+        }} 
+      />
+    );
+  }
 
   // Stack diagram descriptors for premium micro-interactions
   const stackDescriptions = [
@@ -397,7 +436,13 @@ export default function App() {
       
       <div className="flex-1 flex flex-col relative z-10">
         {/* 1. Navbar */}
-        <Navbar onOpenPlanner={() => setPlannerOpen(true)} currentPage={currentPage} />
+        <Navbar 
+          onOpenPlanner={() => setPlannerOpen(true)} 
+          onOpenSignIn={() => setSignInOpen(true)} 
+          onSignOut={handleSignOut}
+          isAuthenticated={isAuthenticated}
+          currentPage={currentPage} 
+        />
 
         {/* Dynamic Page Rendering with Motion Transition */}
         <AnimatePresence mode="wait">
@@ -424,6 +469,58 @@ export default function App() {
             isOpen={plannerOpen} 
             onClose={() => setPlannerOpen(false)} 
           />
+        )}
+      </AnimatePresence>
+
+      {/* 14. Travel Connect Partner & Client Portal (Exquisite SignIn Modal) */}
+      <AnimatePresence>
+        {signInOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div 
+              onClick={() => setSignInOpen(false)} 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 z-10 cursor-pointer bg-slate-900/40 backdrop-blur-md" 
+            />
+            {/* Modal Card wrapper */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 26 }}
+              className="relative w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl z-20 flex flex-col max-h-[95vh]"
+            >
+              <div className="absolute top-4 right-4 z-50">
+                <button 
+                  onClick={() => setSignInOpen(false)}
+                  className="p-2 rounded-full bg-slate-100/80 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                  aria-label="Close Portal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="overflow-y-auto w-full h-full">
+                <SignInPortal 
+                  onSuccess={() => {
+                    setIsAuthenticated(true);
+                    localStorage.setItem('reveza_authenticated', 'true');
+                    setSignInOpen(false);
+                    setCurrentPage('home');
+                    window.location.hash = '#thesis';
+                    setTimeout(() => {
+                      const el = document.getElementById('thesis-block');
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }, 400);
+                  }}
+                />
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

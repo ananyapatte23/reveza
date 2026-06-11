@@ -6,6 +6,7 @@
 import { useState, FormEvent } from 'react';
 import { X, Sparkles, AlertCircle, IndianRupee, Clock, Server, ArrowRight, ShieldCheck, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface InteractivePlannerProps {
   isOpen?: boolean;
@@ -23,6 +24,8 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
   const [userBrief, setUserBrief] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [supabaseError, setSupabaseError] = useState<string | null>(null);
+  const [isSupabaseSubmitted, setIsSupabaseSubmitted] = useState<boolean | null>(null);
 
   if (!isInline && !isOpen) return null;
 
@@ -109,15 +112,53 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!userEmail) return;
 
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      setSubmitted(true);
-    }, 1500);
+    setSupabaseError(null);
+
+    const submissionData = {
+      email: userEmail,
+      erp_scope: erpScope,
+      ai_scope: aiScope,
+      managed_services: managedServices,
+      speed: speed,
+      total_cost: total,
+      brief: userBrief,
+    };
+
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        const { error } = await (supabase as any)
+          .from('scoping_submissions')
+          .insert([submissionData]);
+
+        if (error) {
+          console.error("Supabase error during insertion:", error);
+          setSupabaseError(error.message);
+          setIsSupabaseSubmitted(false);
+          setSubmitting(false);
+          return;
+        } else {
+          setIsSupabaseSubmitted(true);
+        }
+      } catch (err: any) {
+        console.error("Failed to connect to Supabase database:", err);
+        setSupabaseError(err.message || 'Network error connecting to Supabase');
+        setIsSupabaseSubmitted(false);
+        setSubmitting(false);
+        return;
+      }
+    } else {
+      // Graceful offline fallback
+      setIsSupabaseSubmitted(false);
+    }
+
+    setSubmitting(false);
+    setSubmitted(true);
   };
 
   return (
@@ -432,6 +473,29 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
 
                   {/* Submission form block */}
                   <form onSubmit={handleSubmit} className="mt-8 space-y-3.5 relative z-10">
+                    {/* Database status and alert context */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-s2 border border-border-custom/50 text-[10px] font-mono leading-none">
+                        {isSupabaseConfigured() ? (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                            <span className="text-text-primary">Database Sync Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                            <span className="text-text-dim">Simulated Submission Mode (Configure Keys to Persist)</span>
+                          </>
+                        )}
+                      </div>
+                      
+                      {supabaseError && (
+                        <div className="text-[10px] text-red-500 bg-red-500/5 border border-red-500/20 px-3 py-2 rounded font-mono leading-relaxed">
+                          Database Error: {supabaseError}
+                        </div>
+                      )}
+                    </div>
+
                     <input
                       type="email"
                       required
@@ -452,7 +516,7 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
                       disabled={submitting}
                       className="w-full py-4 bg-accent text-bg hover:opacity-95 font-bold text-xs uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 cursor-pointer shadow-md hover:shadow-lg transition-all"
                     >
-                      {submitting ? 'Authenticating scope...' : 'Submit Scoping Proposal Draft'}
+                      {submitting ? 'Connecting with Data Fabric...' : 'Submit Scoping Proposal Draft'}
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </form>
@@ -477,6 +541,7 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
                   <div>EMAIL: {userEmail}</div>
                   <div>CALCULATION RANGE: INDIVIDUAL COMPLIANCE</div>
                   <div>SLA LEVEL: CONTINUOUS ASSURANCES</div>
+                  <div>PERSISTENCE STATUS: {isSupabaseSubmitted ? "SUCCESSFULLY WRITTEN TO SUPABASE" : "CONFIRMED (OFFLINE SIMULATED)"}</div>
                 </div>
                 <button
                   onClick={() => {

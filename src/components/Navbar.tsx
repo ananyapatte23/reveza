@@ -6,13 +6,17 @@
 import { useState, useEffect } from 'react';
 import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import RevezaLogo from './ui/reveza-logo';
 
 interface NavbarProps {
   onOpenPlanner: () => void;
+  onOpenSignIn: () => void;
+  onSignOut?: () => void;
+  isAuthenticated?: boolean;
   currentPage: string;
 }
 
-export default function Navbar({ onOpenPlanner, currentPage }: NavbarProps) {
+export default function Navbar({ onOpenPlanner, onOpenSignIn, onSignOut, isAuthenticated, currentPage }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -36,42 +40,15 @@ export default function Navbar({ onOpenPlanner, currentPage }: NavbarProps) {
       <nav className="max-w-7xl mx-auto px-6 md:px-12 h-full flex items-center justify-between relative">
         
         {/* Luxury Brand Monogram Logo */}
-        <a href="#top" className="flex items-center gap-3.5 group select-none" id="logo-link">
-          {/* Brand Emblem (Highly animated infrastructure logo) */}
-          <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+        <a href="#top" className="flex items-center gap-2 group select-none" id="logo-link">
+          {/* Brand Emblem (The high fidelity Reveza Logo) */}
+          <div className="relative flex items-center justify-center shrink-0">
             {/* Interactive outer pulse ring */}
-            <div className="absolute inset-0 rounded-full bg-accent/20 animate-ping opacity-40 scale-110 group-hover:bg-cream/30 transition-all duration-300" />
-            
-            {/* Complex layered telemetry SVG */}
-            <svg viewBox="0 0 100 100" className="w-8 h-8 text-accent animate-[spin_16s_linear_infinite] relative z-10 transition-colors group-hover:text-cream">
-              {/* Outer digital sync ring */}
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="40" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="7" 
-                strokeDasharray="40 25" 
-                className="opacity-70"
-              />
-              {/* Inner algorithmic counter-rotator */}
-              <circle 
-                cx="50" 
-                cy="50" 
-                r="25" 
-                fill="none" 
-                stroke="var(--color-cream)" 
-                strokeWidth="7" 
-                strokeDasharray="20 15" 
-                className="animate-[spin_8s_linear_infinite_reverse]" 
-              />
-              {/* Central high-throughput core */}
-              <circle cx="50" cy="50" r="11" fill="currentColor" />
-            </svg>
+            <div className="absolute inset-0 rounded-full bg-accent/20 animate-pulse opacity-40 scale-110 group-hover:bg-accent/30 transition-all duration-300" />
+            <RevezaLogo size={36} />
           </div>
           
-          <span className="font-serif font-black text-2xl tracking-[-0.02em] text-text-primary group-hover:text-accent transition-colors leading-none">
+          <span className="font-serif font-black text-2xl tracking-[-0.02em] text-text-primary group-hover:text-accent transition-colors leading-none ml-1">
             Reveza
           </span>
           <span className="hidden sm:inline-block text-[9px] font-mono text-text-dim border border-border-custom px-1.5 py-0.5 rounded uppercase tracking-widest font-black bg-s1">
@@ -114,7 +91,24 @@ export default function Navbar({ onOpenPlanner, currentPage }: NavbarProps) {
         </div>
 
         {/* CTA Actions */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
+          {isAuthenticated ? (
+            <button
+              onClick={onSignOut}
+              className="text-xs font-bold uppercase tracking-widest px-4 py-3 rounded-lg border border-red-200 hover:border-red-500 hover:bg-red-50 hover:text-red-500 transition-all cursor-pointer"
+              id="portal-trigger-desktop"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <button
+              onClick={onOpenSignIn}
+              className="text-xs font-bold uppercase tracking-widest px-4 py-3 rounded-lg border border-border-custom hover:border-accent/50 text-text-muted hover:text-accent transition-all cursor-pointer"
+              id="portal-trigger-desktop"
+            >
+              Client Portal
+            </button>
+          )}
           <button
             onClick={onOpenPlanner}
             className="flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-widest rounded-lg bg-accent text-bg hover:opacity-95 shadow hover:shadow-lg transition-all cursor-pointer"
@@ -170,12 +164,36 @@ export default function Navbar({ onOpenPlanner, currentPage }: NavbarProps) {
               
               <div className="h-[1px] bg-border-custom my-2" />
               
+              {isAuthenticated ? (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onSignOut?.();
+                  }}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 text-xs font-bold uppercase tracking-wider rounded-lg border border-red-200 text-red-500 hover:bg-red-50 cursor-pointer bg-red-50/20"
+                  id="portal-trigger-mobile"
+                >
+                  Sign Out
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenSignIn();
+                  }}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 text-xs font-bold uppercase tracking-wider rounded-lg border border-border-custom text-text-muted hover:text-accent cursor-pointer bg-s2/25"
+                  id="portal-trigger-mobile"
+                >
+                  Client Sign-In
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onOpenPlanner();
                 }}
-                className="flex items-center justify-center gap-2 w-full py-4 text-xs font-bold uppercase tracking-wider rounded-lg bg-accent text-bg hover:opacity-95 shadow cursor-pointer"
+                className="flex items-center justify-center gap-2 w-full py-4 text-xs font-bold uppercase tracking-wider rounded-lg bg-accent text-bg hover:opacity-95 shadow cursor-pointer animate-pulse-subtle"
                 id="planner-trigger-mobile"
               >
                 Compute Scoping RFP <ArrowRight className="w-4 h-4" />

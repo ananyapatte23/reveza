@@ -13,6 +13,13 @@
   --color-accent: #1D4ED8; /* Premium Royal Blue */
   --color-cream: #3B82F6;  /* Vibrant Royal Blue Accent */
 
+  --color-background: #FFFFFF;
+  --color-foreground: #0F172A;
+  --color-primary: #1D4ED8;
+  --color-secondary: #F4F7FC;
+  --color-muted: #334155;
+  --color-input: #E2E8F0;
+
   --font-serif: "Fraunces", Georgia, serif;
   --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
