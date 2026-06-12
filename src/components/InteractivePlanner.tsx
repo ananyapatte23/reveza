@@ -4,7 +4,7 @@
  */
 
 import { useState, FormEvent } from 'react';
-import { X, Sparkles, AlertCircle, IndianRupee, Clock, Server, ArrowRight, ShieldCheck, CheckCircle } from 'lucide-react';
+import { X, Sparkles, AlertCircle, Clock, Server, ArrowRight, ShieldCheck, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -28,71 +28,6 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
   const [isSupabaseSubmitted, setIsSupabaseSubmitted] = useState<boolean | null>(null);
 
   if (!isInline && !isOpen) return null;
-
-  // Cost breakups to calculate proportional allocations
-  const getBudgetDetails = () => {
-    let erpCost = 0;
-    let aiCost = 0;
-    let supportCost = 0;
-
-    // ERP Core parameters
-    switch (erpScope) {
-      case 's4hana':
-        erpCost = 8500000;
-        break;
-      case 'multicountry':
-        erpCost = 15000000;
-        break;
-      case 'greenfield':
-        erpCost = 12000000;
-        break;
-      default:
-        erpCost = 0;
-    }
-
-    // AI Intelligence parameters
-    switch (aiScope) {
-      case 'agentic':
-        aiCost = 3500000;
-        break;
-      case 'decisioning':
-        aiCost = 4500000;
-        break;
-      case 'engagement':
-        aiCost = 2500000;
-        break;
-      default:
-        aiCost = 0;
-    }
-
-    // Managed support
-    if (managedServices) {
-      supportCost = 3000000;
-    }
-
-    let rawTotal = erpCost + aiCost + supportCost;
-    if (rawTotal === 0) rawTotal = 1;
-
-    // Expedite markup multiplier
-    const multiplier = speed === 'rush' ? 1.25 : 1;
-    const finalTotal = Math.round(rawTotal * multiplier);
-
-    const erpPercentage = Math.round((erpCost / rawTotal) * 100);
-    const aiPercentage = Math.round((aiCost / rawTotal) * 100);
-    const supportPercentage = Math.round((supportCost / rawTotal) * 100);
-
-    return {
-      erpCost: Math.round(erpCost * multiplier),
-      aiCost: Math.round(aiCost * multiplier),
-      supportCost: Math.round(supportCost * multiplier),
-      total: finalTotal,
-      erpPer: erpPercentage,
-      aiPer: aiPercentage,
-      supportPer: supportPercentage
-    };
-  };
-
-  const { erpCost, aiCost, supportCost, total, erpPer, aiPer, supportPer } = getBudgetDetails();
 
   const getErpLabel = () => {
     switch (erpScope) {
@@ -125,7 +60,7 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
       ai_scope: aiScope,
       managed_services: managedServices,
       speed: speed,
-      total_cost: total,
+      total_cost: 0,
       brief: userBrief,
     };
 
@@ -191,7 +126,7 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
           <div className="flex items-center gap-2.5">
             <Sparkles className="w-5 h-5 text-accent animate-pulse" />
             <h3 className="font-serif text-lg sm:text-xl font-normal tracking-tight text-text-primary">
-              Enterprise RFP &amp; Solution Scopes Planner
+              Enterprise RFP &amp; Solution Scopes Inquiry
             </h3>
           </div>
           {!isInline && onClose && (
@@ -372,7 +307,7 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
                   </div>
                 </div>
 
-                {/* Highly Visual Estimate Right Panel with Tri-Color Graph */}
+                {/* Clean, High-Fidelity Solutions Summary and Inquiry Submission Panel */}
                 <div className="lg:col-span-5 bg-s1 border border-border-custom rounded-lg p-6 lg:p-7 flex flex-col justify-between shadow-xl relative">
                   
                   {/* Decorative faint background element */}
@@ -382,59 +317,11 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
 
                   <div className="space-y-6">
                     <h4 className="text-[10px] font-bold text-text-dim font-mono uppercase tracking-widest border-b border-border-custom pb-2 flex items-center justify-between">
-                      <span>Provisional Estimate</span>
-                      <span className="text-[9px] px-2 py-0.5 bg-s2 rounded text-text-muted font-normal">AUDITED RATING</span>
+                      <span>RFP Selection Summary</span>
+                      <span className="text-[9px] px-2 py-0.5 bg-s2 rounded text-text-muted font-normal">AUDITED SCOPE</span>
                     </h4>
 
-                    {/* Live Tri-Color Allocation Segment Stack (Richer Visuals constraint) */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[10px] font-mono text-text-dim">
-                        <span>ESTIMATED INVESTMENT SPLIT</span>
-                        <span>CORE VS AI VS SUPPORT</span>
-                      </div>
-                      
-                      {/* Bar stack display */}
-                      <div className="w-full h-4 bg-s2 rounded overflow-hidden flex shadow-inner">
-                        {erpPer > 0 && (
-                          <div 
-                            style={{ width: `${erpPer}%` }} 
-                            className="bg-accent transition-all duration-350" 
-                            title={`Digital Core: ${erpPer}%`}
-                          />
-                        )}
-                        {aiPer > 0 && (
-                          <div 
-                            style={{ width: `${aiPer}%` }} 
-                            className="bg-cream transition-all duration-350" 
-                            title={`Applied AI: ${aiPer}%`}
-                          />
-                        )}
-                        {supportPer > 0 && (
-                          <div 
-                            style={{ width: `${supportPer}%` }} 
-                            className="bg-cream transition-all duration-350" 
-                            title={`AMS Support: ${supportPer}%`}
-                          />
-                        )}
-                      </div>
-
-                      {/* Legend displaying actual percent and approximate color */}
-                      <div className="grid grid-cols-3 gap-1 text-[9px] font-mono pt-1 text-center">
-                        <div className="flex items-center gap-1 justify-center">
-                          <span className="w-2 h-2 rounded-full bg-accent" />
-                          <span className="text-text-muted font-semibold">Core: {erpPer}%</span>
-                        </div>
-                        <div className="flex items-center gap-1 justify-center">
-                          <span className="w-2 h-2 rounded-full bg-cream" />
-                          <span className="text-text-muted font-semibold">AI: {aiPer}%</span>
-                        </div>
-                        <div className="flex items-center gap-1 justify-center">
-                          <span className="w-2 h-2 rounded-full bg-cream" />
-                          <span className="text-text-muted font-semibold">SLA: {supportPer}%</span>
-                        </div>
-                      </div>
-                    </div>
-
+                    {/* Selected Scopes List */}
                     <div className="space-y-3.5 text-xs font-light">
                       <div className="flex justify-between border-b border-border-custom/60 pb-2.5 gap-4">
                         <span className="text-text-dim font-mono text-[10px]">ERP Core Support:</span>
@@ -454,19 +341,12 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
                       </div>
                     </div>
 
-                    {/* Beautiful Big Number estimate display */}
                     <div className="bg-bg border border-border-custom p-5 rounded-lg text-center shadow-sm">
                       <div className="text-[10px] text-text-dim font-bold uppercase tracking-widest mb-1.5 font-mono">
-                        PROVISIONAL ANUUALIZED AUDITED SUM (INR)
+                        RFP Submission Process
                       </div>
-                      <div className="flex items-center justify-center text-accent">
-                        <IndianRupee className="w-6 h-6 mr-1" />
-                        <span className="text-4xl sm:text-5xl font-extrabold tracking-tighter font-mono text-accent">
-                          {total.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <p className="text-[9px] text-[#5C6462] mt-3.5 leading-relaxed font-sans max-w-sm mx-auto">
-                        This is an aggregated calculation including localized MCA guarantees, data architecture security bounds, and continuous core assurance.
+                      <p className="text-[10px] text-text-muted leading-relaxed font-sans max-w-sm mx-auto">
+                        Your architectural objectives and modernization targets are analyzed to build a bespoke system design blueprint. Submit your email to connect with our delivery engineers.
                       </p>
                     </div>
                   </div>
@@ -534,13 +414,13 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
                 </div>
                 <h3 className="font-serif text-3xl font-normal text-text-primary italic">Scoping Parameters Locked</h3>
                 <p className="font-sans text-xs sm:text-sm text-text-muted leading-relaxed font-light mb-6">
-                  Thank you! Our chief delivery manager will process your S/4HANA &amp; Agentic AI parameters for an aggregate estimated budget of <strong className="text-accent font-bold">₹{total.toLocaleString('en-IN')}</strong> and submit a detailed formal proposal draft to <strong className="text-text-primary font-semibold">{userEmail}</strong> within 12 hours.
+                  Thank you! Our chief delivery manager will process your selected S/4HANA &amp; Agentic AI parameters and submit a detailed formal proposal draft to <strong className="text-text-primary font-semibold">{userEmail}</strong> within 12 hours.
                 </p>
                 <div className="p-4 bg-s1 rounded border border-border-custom text-left text-[11px] font-mono space-y-1 w-full mb-4">
                   <div className="text-accent font-bold uppercase tracking-wider mb-1">PROVISIONAL RECORD LOG:</div>
                   <div>EMAIL: {userEmail}</div>
-                  <div>CALCULATION RANGE: INDIVIDUAL COMPLIANCE</div>
-                  <div>SLA LEVEL: CONTINUOUS ASSURANCES</div>
+                  <div>MANAGED SLA: {managedServices ? 'KPI-linked AMS protocol' : 'Internal Handover'}</div>
+                  <div>SPEED ROADMAP: {speed === 'rush' ? '6-Wk Sprint' : '12-Wk Strategic'}</div>
                   <div>PERSISTENCE STATUS: {isSupabaseSubmitted ? "SUCCESSFULLY WRITTEN TO SUPABASE" : "CONFIRMED (OFFLINE SIMULATED)"}</div>
                 </div>
                 <button
@@ -550,7 +430,7 @@ export default function InteractivePlanner({ isOpen = false, onClose, isInline =
                   }}
                   className="px-8 py-3.5 rounded-lg bg-accent text-bg font-bold text-xs uppercase tracking-widest cursor-pointer shadow hover:opacity-95 transition-opacity"
                 >
-                  {isInline ? 'Scoping configuration' : 'Close planner'}
+                  {isInline ? 'Configure Parameters' : 'Close Planner'}
                 </button>
               </motion.div>
             )}

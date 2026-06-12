@@ -13,44 +13,31 @@ import ServicesDetail from './components/ServicesDetail'; // Deals with Services
 import BeliefsAndIndustries from './components/BeliefsAndIndustries'; // Deals with Beliefs & Sectors
 import InteractivePlanner from './components/InteractivePlanner'; // Deals with RFP estimations
 import Footer from './components/Footer';
-import SignInPortal from './components/ui/travel-connect-signin-1';
+import RevezaLogo from './components/ui/reveza-logo';
 import { AnimatePresence, motion } from 'motion/react';
 import { TICKER_ITEMS } from './data';
 import { Sparkles, ArrowRight, X } from 'lucide-react';
 
-type PageType = 'home' | 'capabilities' | 'cases' | 'services' | 'industries' | 'contact';
+type PageType = 'home' | 'thesis' | 'capabilities' | 'cases' | 'services' | 'industries' | 'contact';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('home');
+  const [displayPage, setDisplayPage] = useState<PageType>('home');
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
-  const [signInOpen, setSignInOpen] = useState(false);
   const [hoveredStackRow, setHoveredStackRow] = useState<number | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('reveza_authenticated') === 'true';
-  });
-
-  const handleSignOut = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('reveza_authenticated');
-  };
 
   // Synchronize hash routing
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
       
-      if (hash === 'thesis' || hash === 'top' || !hash) {
+      if (hash === 'home' || hash === 'top' || !hash) {
         setCurrentPage('home');
-        if (hash === 'thesis') {
-          setTimeout(() => {
-            const el = document.getElementById('thesis-block');
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth' });
-            }
-          }, 100);
-        } else {
-          window.scrollTo({ top: 0, behavior: 'instant' });
-        }
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } else if (hash === 'thesis') {
+        setCurrentPage('thesis');
+        window.scrollTo({ top: 0, behavior: 'instant' });
       } else if (hash === 'capabilities') {
         setCurrentPage('capabilities');
         window.scrollTo({ top: 0, behavior: 'instant' });
@@ -74,25 +61,43 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // If not authenticated, lock the screen with the modern Gate/SignIn Portal entry page
-  if (!isAuthenticated) {
-    return (
-      <SignInPortal 
-        onSuccess={() => {
-          setIsAuthenticated(true);
-          localStorage.setItem('reveza_authenticated', 'true');
-          setCurrentPage('home');
-          window.location.hash = '#thesis';
-          setTimeout(() => {
-            const el = document.getElementById('thesis-block');
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth' });
-            }
-          }, 400);
-        }} 
-      />
-    );
-  }
+  // Trigger continuous page loading transitions (0.5s total loading)
+  useEffect(() => {
+    if (currentPage !== displayPage) {
+      setIsTransitioning(true);
+      
+      const timer = setTimeout(() => {
+        setDisplayPage(currentPage);
+        setIsTransitioning(false);
+      }, 500);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [currentPage, displayPage]);
+
+  // Status mapping for brand-transition OS overlay
+  const getLoaderMessage = (target: PageType) => {
+    switch (target) {
+      case 'home':
+        return 'Assembling enterprise core...';
+      case 'thesis':
+        return 'Assembling core operating thesis...';
+      case 'capabilities':
+        return 'Synchronizing enterprise modernization blueprints...';
+      case 'cases':
+        return 'Formatting delivered system and impact studies...';
+      case 'services':
+        return 'Structuring direct SLAs & engagement models...';
+      case 'industries':
+        return 'Mapping industrial axioms & telemetry cores...';
+      case 'contact':
+        return 'Initializing Contacts portal...';
+      default:
+        return 'Loading components & resources...';
+    }
+  };
 
   // Stack diagram descriptors for premium micro-interactions
   const stackDescriptions = [
@@ -104,7 +109,7 @@ export default function App() {
   ];
 
   const renderPageContent = () => {
-    switch (currentPage) {
+    switch (displayPage) {
       case 'home':
         return (
           <>
@@ -130,38 +135,6 @@ export default function App() {
                 ))}
               </div>
             </div>
-
-            {/* 4. Thesis Segment */}
-            <section id="thesis-block" className="py-24 px-6 md:px-10 border-b border-border-custom max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-              <div className="lg:col-span-5">
-                <div className="text-[11px] uppercase tracking-[0.16em] text-text-dim mb-4 flex items-center gap-2">
-                  <span className="w-10 h-[1px] bg-border-mid" /> Our thesis
-                </div>
-                <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight tracking-[-0.03em] text-text-primary">
-                  Transformation isn't a project — it's an <span className="italic text-cream font-normal">operating posture.</span>
-                </h2>
-              </div>
-              <div className="lg:col-span-7 font-sans text-sm sm:text-base font-light text-text-muted leading-relaxed space-y-6">
-                <p>
-                  Most transformation programs stall because they're treated as one-time migrations. The architecture lands; the operating model never catches up. Six quarters later, the platform is live and the business still moves at its old speed.
-                </p>
-                <p>
-                  <strong className="text-text-primary font-medium">We work differently.</strong> Every engagement starts with the operating posture — how decisions get made, where data flows, what the human-AI handoff looks like — and the technology choices follow. <span className="italic text-cream">AI isn't a layer we bolt on;</span> it's a design principle from the first conversation.
-                </p>
-                <p>
-                  That's what lets a transformation continue compounding long after we've handed it over.
-                </p>
-                
-                <div className="pt-4">
-                  <a
-                    href="#capabilities"
-                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-accent hover:text-text-primary transition-colors font-mono"
-                  >
-                    View our practices <ArrowRight className="w-4 h-4" />
-                  </a>
-                </div>
-              </div>
-            </section>
 
             {/* 5. Stack Diagram Block (The practices intersection) */}
             <section id="stack" className="py-24 px-6 md:px-10 bg-bg">
@@ -284,6 +257,55 @@ export default function App() {
           </>
         );
 
+      case 'thesis':
+        return (
+          <div className="bg-bg pb-24">
+            <div className="pt-32 pb-12 px-6 md:px-10 max-w-7xl mx-auto border-b border-border-custom mb-12">
+              <span className="text-[10px] uppercase font-bold font-mono tracking-widest text-accent mb-2 block animate-fade-in">
+                Strategic Posture
+              </span>
+              <h1 className="font-serif text-4xl sm:text-6xl font-normal text-text-primary tracking-tight">
+                Our <span className="italic text-cream font-normal">Transformation Thesis</span>
+              </h1>
+              <p className="text-sm text-text-muted mt-3 font-light max-w-2xl bg-transparent">
+                Why transformation is not a one-time migration, but a continuous operating posture.
+              </p>
+            </div>
+
+            {/* 4. Thesis Segment */}
+            <section id="thesis-block" className="py-12 px-6 md:px-10 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+              <div className="lg:col-span-5">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-text-dim mb-4 flex items-center gap-2">
+                  <span className="w-10 h-[1px] bg-border-mid" /> Our thesis
+                </div>
+                <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight tracking-[-0.03em] text-text-primary">
+                  Transformation isn't a project — it's an <span className="italic text-cream font-normal">operating posture.</span>
+                </h2>
+              </div>
+              <div className="lg:col-span-7 font-sans text-sm sm:text-base font-light text-text-muted leading-relaxed space-y-6">
+                <p>
+                  Most transformation programs stall because they're treated as one-time migrations. The architecture lands; the operating model never catches up. Six quarters later, the platform is live and the business still moves at its old speed.
+                </p>
+                <p>
+                  <strong className="text-text-primary font-medium">We work differently.</strong> Every engagement starts with the operating posture — how decisions get made, where data flows, what the human-AI handoff looks like — and the technology choices follow. <span className="italic text-cream">AI isn't a layer we bolt on;</span> it's a design principle from the first conversation.
+                </p>
+                <p>
+                  That's what lets a transformation continue compounding long after we've handed it over.
+                </p>
+                
+                <div className="pt-4">
+                  <a
+                    href="#capabilities"
+                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-accent hover:text-text-primary transition-colors font-mono"
+                  >
+                    View our practices <ArrowRight className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            </section>
+          </div>
+        );
+
       case 'capabilities':
         return (
           <div className="bg-bg pb-24">
@@ -364,13 +386,13 @@ export default function App() {
           <div className="bg-bg pb-24">
             <div className="pt-32 pb-12 px-6 md:px-10 max-w-7xl mx-auto border-b border-border-custom mb-12">
               <span className="text-[10px] uppercase font-bold font-mono tracking-widest text-accent mb-2 block">
-                Enterprise RFP Portal
+                Contacts
               </span>
               <h1 className="font-serif text-4xl sm:text-6xl font-normal text-text-primary tracking-tight">
                 Start a <span className="italic text-cream font-normal">Transformation</span>
               </h1>
               <p className="text-sm text-text-muted mt-3 font-light max-w-2xl bg-transparent">
-                Establish your modernization parameters below to compute an aggregated provisional estimate, and log a formal inquiry.
+                Define your core digital modernization scope below to log a formal inquiry with our implementation teams.
               </p>
             </div>
 
@@ -438,16 +460,16 @@ export default function App() {
         {/* 1. Navbar */}
         <Navbar 
           onOpenPlanner={() => setPlannerOpen(true)} 
-          onOpenSignIn={() => setSignInOpen(true)} 
-          onSignOut={handleSignOut}
-          isAuthenticated={isAuthenticated}
+          onOpenSignIn={() => {}} 
+          onSignOut={() => {}}
+          isAuthenticated={true}
           currentPage={currentPage} 
         />
 
         {/* Dynamic Page Rendering with Motion Transition */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentPage}
+            key={displayPage}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
@@ -472,55 +494,48 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* 14. Travel Connect Partner & Client Portal (Exquisite SignIn Modal) */}
+      {/* 14. Exquisite brand transition loading screen overlay */}
       <AnimatePresence>
-        {signInOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div 
-              onClick={() => setSignInOpen(false)} 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-0 z-10 cursor-pointer bg-slate-900/40 backdrop-blur-md" 
-            />
-            {/* Modal Card wrapper */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 26 }}
-              className="relative w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl z-20 flex flex-col max-h-[95vh]"
-            >
-              <div className="absolute top-4 right-4 z-50">
-                <button 
-                  onClick={() => setSignInOpen(false)}
-                  className="p-2 rounded-full bg-slate-100/80 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                  aria-label="Close Portal"
+        {isTransitioning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-bg/95 backdrop-blur-md flex flex-col items-center justify-center pointer-events-auto"
+            id="page-transition-loader"
+          >
+            <div className="flex flex-col items-center max-w-sm px-6 text-center animate-fade-in-up">
+              {/* Spinning / pulsing logo emblem */}
+              <div className="relative mb-8 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full bg-accent/20 animate-ping opacity-30 scale-150" />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
                 >
-                  <X className="w-5 h-5" />
-                </button>
+                  <RevezaLogo size={64} />
+                </motion.div>
               </div>
-              <div className="overflow-y-auto w-full h-full">
-                <SignInPortal 
-                  onSuccess={() => {
-                    setIsAuthenticated(true);
-                    localStorage.setItem('reveza_authenticated', 'true');
-                    setSignInOpen(false);
-                    setCurrentPage('home');
-                    window.location.hash = '#thesis';
-                    setTimeout(() => {
-                      const el = document.getElementById('thesis-block');
-                      if (el) {
-                        el.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }, 400);
-                  }}
+
+              {/* Status messages with elegant mono style */}
+              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-accent mb-2">
+                REVEZA OS Engine
+              </span>
+              <h3 className="font-serif text-lg text-text-primary italic font-light animate-pulse mb-4 h-6">
+                {getLoaderMessage(currentPage)}
+              </h3>
+              
+              {/* Premium Progress Bar */}
+              <div className="w-48 h-[2px] bg-border-custom relative overflow-hidden rounded-full">
+                <motion.div 
+                  initial={{ left: "-100%" }}
+                  animate={{ left: "100%" }}
+                  transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
+                  className="absolute top-0 bottom-0 w-24 bg-gradient-to-r from-transparent via-accent to-transparent"
                 />
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

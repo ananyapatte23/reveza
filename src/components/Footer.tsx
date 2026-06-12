@@ -51,7 +51,7 @@ export default function Footer() {
             </span>
             <ul className="space-y-1.5 text-[11px] font-sans text-text-muted font-light">
               <li><a href="#cases" className="hover:text-accent transition-colors">Impact Cases</a></li>
-              <li><a href="#contact" className="hover:text-accent transition-colors">RFP Scoping</a></li>
+              <li><a href="#contact" className="hover:text-accent transition-colors">Contacts</a></li>
               <li><a href="#thesis" className="hover:text-accent transition-colors">System Thesis</a></li>
               <li><a href="#industries" className="hover:text-accent transition-colors">Sectors</a></li>
             </ul>
